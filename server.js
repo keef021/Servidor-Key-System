@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs-extra');
 const crypto = require('crypto');
@@ -7,20 +8,24 @@ const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MONETIZZY_TOKEN = process.env.MONETIZZY_TOKEN;
 
 app.use(cors());
 app.use(bodyParser.json());
 
+// Arquivo que guarda as keys
 const KEYS_FILE = './keys.json';
 let keys = [];
 if (fs.existsSync(KEYS_FILE)) {
     keys = fs.readJsonSync(KEYS_FILE);
 }
 
+// Salva keys no arquivo
 function saveKeys() {
     fs.writeJsonSync(KEYS_FILE, keys);
 }
 
+// Gerar key única
 function generateKey() {
     return crypto.randomBytes(4).toString('hex') + '-' + crypto.randomBytes(4).toString('hex');
 }
@@ -31,7 +36,11 @@ function generateKey() {
 app.post('/gerar', async (req, res) => {
     const { monetizzyToken, link } = req.body;
 
-    if (!monetizzyToken) return res.status(403).json({ error: "Token não fornecido" });
+    if (!monetizzyToken || monetizzyToken !== MONETIZZY_TOKEN) {
+        return res.status(403).json({ error: "Token inválido" });
+    }
+
+    if (!link) return res.status(400).json({ error: "É necessário fornecer o link a ser encurtado" });
 
     try {
         // Criar link encurtado no Monetizzy
@@ -40,10 +49,9 @@ app.post('/gerar', async (req, res) => {
             domain: 'ufly.monetizzy.com',
             type: 4
         }, {
-            headers: { 'Authorization': `Bearer ${monetizzyToken}` }
+            headers: { 'Authorization': `Bearer ${MONETIZZY_TOKEN}` }
         });
 
-        // Link encurtado válido → gera key
         if (response.data?.shortened_url) {
             const key = generateKey();
             keys.push({ key, used: false });
@@ -75,4 +83,3 @@ app.post('/validar', (req, res) => {
 app.get('/', (req, res) => res.send("Key System Monetizzy rodando!"));
 
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
-    
