@@ -1,3 +1,4 @@
+// Configuração inicial
 require('dotenv').config();
 const express = require('express');
 const fs = require('fs-extra');
@@ -10,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONETIZZY_TOKEN = process.env.MONETIZZY_TOKEN;
 
+// Middlewares
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -32,7 +34,10 @@ function generateKey() {
 
 // -------------------- Endpoints -------------------- //
 
-// Gerar key (apenas via Monetizzy)
+// Health check
+app.get('/', (req, res) => res.send("Key System Monetizzy rodando!"));
+
+// Gerar key (apenas via Monetizzy, POST)
 app.post('/gerar', async (req, res) => {
     const { monetizzyToken, link } = req.body;
 
@@ -66,7 +71,7 @@ app.post('/gerar', async (req, res) => {
     }
 });
 
-// Validar key (Roblox)
+// Validar key (Roblox, POST)
 app.post('/validar', (req, res) => {
     const { key } = req.body;
     const found = keys.find(k => k.key === key);
@@ -79,7 +84,5 @@ app.post('/validar', (req, res) => {
     res.json({ valid: true });
 });
 
-// Health check
-app.get('/', (req, res) => res.send("Key System Monetizzy rodando!"));
-
+// Iniciar servidor
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
